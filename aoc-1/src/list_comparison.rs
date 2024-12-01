@@ -1,4 +1,4 @@
-fn split_lists(lists: &str) -> (Vec<usize>, Vec<usize>) {
+fn parse_lists(lists: &str) -> (Vec<usize>, Vec<usize>) {
     let mut list1: Vec<usize> = vec![];
     let mut list2: Vec<usize> = vec![];
 
@@ -34,7 +34,7 @@ fn distance(val1: &usize, val2: &usize) -> usize {
 }
 
 pub fn total_distance(lists: &str) -> usize {
-    let (list1, list2) = split_lists(&lists);
+    let (list1, list2) = parse_lists(&lists);
 
     let mut list1 = list1.to_vec();
     let mut list2 = list2.to_vec();
@@ -52,8 +52,39 @@ pub fn total_distance(lists: &str) -> usize {
     return total_d;
 }
 
+pub fn similarity(lists: &str) -> usize {
+    let (list1, list2) = parse_lists(&lists);
+    let mut total_similarity = 0;
+
+    for val1 in &list1 {
+        let mut simililarity_count = 0;
+
+        for val2 in &list2 {
+            if val1 == val2 {
+                simililarity_count += 1;
+            }
+        }
+        total_similarity += simililarity_count * val1;
+    }
+
+    return total_similarity;
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn test_similarity() {
+        let lists = "3   4
+4   3
+2   5
+1   3
+3   9
+3   3";
+
+        let result = super::similarity(&lists);
+        assert_eq!(result, 31);
+    }
+
     #[test]
     fn test_distance() {
         let (v1, v2) = (3, 7);
@@ -75,7 +106,7 @@ mod tests {
 4   3
 2   5
 ";
-        let (list1, list2) = super::split_lists(&example);
+        let (list1, list2) = super::parse_lists(&example);
         assert_eq!(list1, vec![3, 4, 2]);
         assert_eq!(list2, vec![4, 3, 5]);
     }

@@ -6,5 +6,8 @@ fn main() {
         .expect("Should have been able to read the file");
 
     let td = list_comparison::total_distance(&locations);
-    println!("total distance: {}", td)
+    println!("total distance: {}", td);
+
+    let s = list_comparison::similarity(&locations);
+    println!("similarity: {}", s)
 }
