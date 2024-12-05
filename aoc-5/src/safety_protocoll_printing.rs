@@ -100,7 +100,7 @@ fn summarize_updates(updates: &Vec<Vec<u32>>) -> u32 {
     return sum;
 }
 
-pub fn middle_page_numbers_for_correct_updates(update_plan: &str) -> u32 {
+pub fn summarize_valid_updates(update_plan: &str) -> u32 {
     let updates = update_plan.trim();
 
     if let [order_instructions, updates] = updates.split("\n\n").collect::<Vec<&str>>().as_slice() {
@@ -116,8 +116,8 @@ pub fn middle_page_numbers_for_correct_updates(update_plan: &str) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::{
-        check_update_for_order, get_valid_updates, middle_page_numbers_for_correct_updates,
-        parse_sorting_order, summarize_updates,
+        check_update_for_order, get_valid_updates, parse_sorting_order, summarize_updates,
+        summarize_valid_updates,
     };
 
     #[test]
@@ -172,7 +172,7 @@ mod tests {
     }
 
     #[test]
-    fn test_middle_page_numbers_for_correct_updates() {
+    fn test_summarize_valid_updates() {
         let example_plan = "47|53
 97|13
 97|61
@@ -202,7 +202,7 @@ mod tests {
 61,13,29
 97,13,75,29,47";
 
-        let result = middle_page_numbers_for_correct_updates(&example_plan);
+        let result = summarize_valid_updates(&example_plan);
 
         assert_eq!(result, 143);
     }
