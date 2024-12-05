@@ -126,11 +126,8 @@ fn three_by_three_window(text: &Vec<&str>, start: Coords) -> String {
     let mut current_line = 0;
 
     for y in start.y..start.y + 3 {
-        let line = text[y];
-        for x in start.x..start.x + 3 {
-            let current_char = line.chars().collect::<Vec<char>>()[x];
-            three_by_three_window[current_line].push(current_char);
-        }
+        let line = text[y].to_string();
+        three_by_three_window[current_line] = line[start.x..start.x + 3].to_string();
         current_line += 1;
     }
     let three_by_three_window = three_by_three_window.join("\n");
