@@ -1,5 +1,11 @@
 use regex::Regex;
 
+// ############################################################################################
+// ############################################################################################
+// # VARIANT 1                                                                                #
+// ############################################################################################
+// ############################################################################################
+
 fn count_matches(text: &str, pattern: &str) -> u32 {
     let pattern = Regex::new(pattern).unwrap();
 
@@ -67,39 +73,99 @@ fn flip_text_by_minus_45(input: &str) -> String {
     return output;
 }
 
-fn search_horizontally(text: &str) -> u32 {
+fn search_horizontally(text: &str, patterns: &(&str, &str)) -> u32 {
     let mut sum = 0;
 
-    sum += count_matches(&text, r"XMAS");
-    sum += count_matches(&text, r"SAMX");
+    sum += count_matches(&text, patterns.0);
+    sum += count_matches(&text, patterns.1);
 
     return sum;
 }
 
-fn search_vertically(text: &str) -> u32 {
+fn search_vertically(text: &str, patterns: &(&str, &str)) -> u32 {
     let text_turned_by_90 = flip_text_by_90(text);
-    return search_horizontally(&text_turned_by_90);
+    return search_horizontally(&text_turned_by_90, &patterns);
 }
 
-fn search_diagonal_top_left_to_bottom_right(text: &str) -> u32 {
+fn search_diagonal_top_left_to_bottom_right(text: &str, patterns: &(&str, &str)) -> u32 {
     let text_turned_by_45 = flip_text_by_45(&text);
-    return search_horizontally(&text_turned_by_45);
+    return search_horizontally(&text_turned_by_45, &patterns);
 }
 
-fn search_diagonal_bottom_left_to_top_right(text: &str) -> u32 {
+fn search_diagonal_bottom_left_to_top_right(text: &str, patterns: &(&str, &str)) -> u32 {
     let text_turned_by_minus_45 = flip_text_by_minus_45(&text);
-    return search_horizontally(&text_turned_by_minus_45);
+    return search_horizontally(&text_turned_by_minus_45, &patterns);
 }
 
 pub fn xmas_search(text: &str) -> u32 {
     let text = text.trim();
     let mut sum = 0;
+    let patterns = (r"XMAS", r"SAMX");
+    sum += search_horizontally(&text, &patterns);
+    sum += search_vertically(&text, &patterns);
 
-    sum += search_horizontally(&text);
-    sum += search_vertically(&text);
+    sum += search_diagonal_top_left_to_bottom_right(text, &patterns);
+    sum += search_diagonal_bottom_left_to_top_right(&text, &patterns);
 
-    sum += search_diagonal_top_left_to_bottom_right(text);
-    sum += search_diagonal_bottom_left_to_top_right(&text);
+    return sum;
+}
+
+// ############################################################################################
+// ############################################################################################
+// # VARIANT 2                                                                                #
+// ############################################################################################
+// ############################################################################################
+
+struct Coords {
+    x: usize,
+    y: usize,
+}
+
+fn three_by_three_window(text: &Vec<&str>, start: Coords) -> String {
+    let mut three_by_three_window: Vec<String> = vec![String::new(); 3];
+    let mut current_line = 0;
+
+    for y in start.y..start.y + 3 {
+        let line = text[y];
+        for x in start.x..start.x + 3 {
+            let current_char = line.chars().collect::<Vec<char>>()[x];
+            three_by_three_window[current_line].push(current_char);
+        }
+        current_line += 1;
+    }
+    let three_by_three_window = three_by_three_window.join("\n");
+    return three_by_three_window.to_string();
+}
+
+pub fn x_mas_search(text: &str) -> u32 {
+    let text: Vec<&str> = text.trim().split("\n").collect();
+
+    let line_length = text.last().unwrap().chars().into_iter().count();
+    let line_count = text.iter().count();
+
+    let mut sum = 0;
+
+    let patterns = (r"MAS", r"SAM");
+
+    // move windows
+    for window_y in 0..line_count - 2 {
+        for window_x in 0..line_length - 2 {
+            let window = three_by_three_window(
+                &text,
+                Coords {
+                    x: window_x,
+                    y: window_y,
+                },
+            );
+
+            let found_diagonal_1 = search_diagonal_top_left_to_bottom_right(&window, &patterns) > 0;
+            let found_diagonal_2 = search_diagonal_bottom_left_to_top_right(&window, &patterns) > 0;
+
+            if found_diagonal_1 && found_diagonal_2 {
+                sum += 1;
+            }
+        }
+    }
 
     return sum;
 }
@@ -113,8 +179,25 @@ pub fn xmas_search(text: &str) -> u32 {
 #[cfg(test)]
 mod tests {
     use crate::xmas_search::{
-        flip_text_by_45, flip_text_by_90, flip_text_by_minus_45, search_horizontally, xmas_search,
+        flip_text_by_45, flip_text_by_90, flip_text_by_minus_45, search_horizontally, x_mas_search,
+        xmas_search,
     };
+
+    #[test]
+    fn test_x_mas_search() {
+        let text = "OMOSOOOOOO
+OOAOOMSMSO
+OMOSOMAAOO
+OOAOASMSMO
+OMOSOMOOOO
+OOOOOOOOOO
+SOSOSOSOSO
+OAOAOAOAOO
+MOMOMOMOMO
+OOOOOOOOOO";
+        let xmas_count = x_mas_search(text);
+        assert_eq!(xmas_count, 9);
+    }
 
     #[test]
     fn test_flip_text_by_45() {
@@ -195,7 +278,7 @@ ABCD"
 .SAMX.....
 XMASAMX...
 .....XMASX";
-        let xmas_count = search_horizontally(text);
+        let xmas_count = search_horizontally(text, &(r"XMAS", r"SAMX"));
         assert_eq!(xmas_count, 5);
     }
 
