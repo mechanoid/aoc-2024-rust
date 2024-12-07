@@ -1,6 +1,6 @@
 use std::fs;
-mod guard_avoidance;
-use guard_avoidance::predict_path_positions;
+mod guard_avoidance_1;
+use guard_avoidance_1::predict_path_positions;
 
 fn main() {
     let mut map =
