@@ -187,8 +187,8 @@ pub fn show_map(map: &Map) -> String {
     return map.to_string();
 }
 
-pub fn predict_path_positions(map: &mut str) -> (Map, String, usize) {
-    let mut map: Map = parse_map(&map);
+pub fn predict_path_positions<'b>(map: &Map) -> (Map<'b>, String, usize) {
+    let mut map = map.clone();
 
     while let Some((before_location, after_location, _)) = predict_next_step(&map) {
         // update_map(&mut map, &before_location, &after_location);
@@ -371,19 +371,20 @@ mod tests {
 
     #[test]
     fn test_predict_path() {
-        let mut map = "....#.....
-                             .........#
-                             ..........
-                             ..#.......
-                             .......#..
-                             ..........
-                             .#..^.....
-                             ........#.
-                             #.........
-                             ......#..."
-            .to_string();
+        let map = parse_map(
+            "....#.....
+             .........#
+             ..........
+             ..#.......
+             .......#..
+             ..........
+             .#..^.....
+             ........#.
+             #.........
+             ......#...",
+        );
 
-        let (_, map_after, steps) = predict_path_positions(&mut map);
+        let (_, map_after, steps) = predict_path_positions(&map);
 
         assert_eq!(
             map_after,

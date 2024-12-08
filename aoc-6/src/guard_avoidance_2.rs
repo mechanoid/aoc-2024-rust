@@ -1,6 +1,4 @@
-use crate::guard_avoidance_1::{
-    parse_map, predict_next_step, show_map, update_position, Perspective,
-};
+use crate::guard_avoidance_1::{predict_next_step, show_map, update_position, Map, Perspective};
 
 fn way_marker(perspective: Perspective) -> char {
     return match perspective {
@@ -11,8 +9,8 @@ fn way_marker(perspective: Perspective) -> char {
     };
 }
 
-pub fn find_loops(map: &str) -> String {
-    let mut map = parse_map(map);
+pub fn find_loops(map: &Map) -> String {
+    let mut map = map.clone();
 
     while let Some((before_location, after_location, _original_target)) = predict_next_step(&map) {
         if let Some((x, y, old_perspective)) = before_location {
@@ -49,23 +47,24 @@ pub fn find_loops(map: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::guard_avoidance_2::find_loops;
+    use crate::{guard_avoidance_1::parse_map, guard_avoidance_2::find_loops};
 
     #[test]
     fn test_predict_path() {
-        let mut map = "....#.....
-                             .........#
-                             ..........
-                             ..#.......
-                             .......#..
-                             ..........
-                             .#..^.....
-                             ........#.
-                             #.........
-                             ......#..."
-            .to_string();
+        let map = parse_map(
+            "....#.....
+             .........#
+             ..........
+             ..#.......
+             .......#..
+             ..........
+             .#..^.....
+             ........#.
+             #.........
+             ......#...",
+        );
 
-        let map_after = find_loops(&mut map);
+        let map_after = find_loops(&map);
 
         assert_eq!(
             map_after,
