@@ -1,7 +1,7 @@
 use std::fmt;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
-enum Perspective {
+pub enum Perspective {
     Up,
     Down,
     Left,
@@ -19,10 +19,10 @@ impl fmt::Display for Perspective {
     }
 }
 
-type Location = (usize, usize, Perspective);
-type Map<'a> = Vec<Vec<char>>;
+pub type Location = (usize, usize, Perspective);
+pub type Map<'a> = Vec<Vec<char>>;
 
-fn parse_map(map: &str) -> Map {
+pub fn parse_map(map: &str) -> Map {
     let map = map.trim();
     let map: Vec<&str> = map.split("\n").collect();
     let map: Vec<Vec<char>> = map
@@ -51,7 +51,7 @@ fn rotate(perspective: &Perspective) -> Perspective {
     };
 }
 
-fn find_guard(map: &Map) -> Result<Location, String> {
+fn find_guard(map: &Map) -> Option<Location> {
     let guard_shapes = ['^', '<', '>', 'v'];
 
     for (y, line) in map.iter().enumerate() {
@@ -62,50 +62,52 @@ fn find_guard(map: &Map) -> Result<Location, String> {
             let guard = line[x];
             let perspective = perspective(&guard).unwrap();
 
-            return Ok((x, y, perspective));
+            return Some((x, y, perspective));
         }
     }
 
-    return Err("did not find any guard!! Where is he?!?! (ﾉﾟ0ﾟ)ﾉ~".to_string());
+    return None;
 }
 
-fn go_up(map: &Map, location: &Location) -> Option<Location> {
+fn go_up(map: &Map, location: &Location) -> (Option<Location>, Option<char>) {
     let (x, y, perspective) = location.clone();
 
     if y > 0 {
         let new_y = y - 1;
         let next_field = map[new_y][x];
 
-        if next_field == '#' {
+        if next_field == '#' || next_field == 'O' {
+            let original_target = next_field;
             let new_perspective = rotate(&perspective);
-            return Some((x, y, new_perspective));
+            return (Some((x, y, new_perspective)), Some(original_target));
         } else {
-            return Some((x, new_y, perspective));
+            return (Some((x, new_y, perspective)), None);
         }
     }
 
-    return None;
+    return (None, None);
 }
 
-fn go_down(map: &Map, location: &Location) -> Option<Location> {
+fn go_down(map: &Map, location: &Location) -> (Option<Location>, Option<char>) {
     let (x, y, perspective) = location.clone();
 
     if y < map.len() - 1 {
         let new_y = y + 1;
         let next_field = map[new_y][x];
 
-        if next_field == '#' {
+        if next_field == '#' || next_field == 'O' {
+            let original_target = next_field;
             let new_perspective = rotate(&perspective);
-            return Some((x, y, new_perspective));
+            return (Some((x, y, new_perspective)), Some(original_target));
         } else {
-            return Some((x, new_y, perspective));
+            return (Some((x, new_y, perspective)), None);
         }
     }
 
-    return None;
+    return (None, None);
 }
 
-fn go_right(map: &Map, location: &Location) -> Option<Location> {
+fn go_right(map: &Map, location: &Location) -> (Option<Location>, Option<char>) {
     let (x, y, perspective) = location.clone();
     let first_line = map.first().unwrap();
 
@@ -114,18 +116,19 @@ fn go_right(map: &Map, location: &Location) -> Option<Location> {
 
         let next_field = map[y][new_x];
 
-        if next_field == '#' {
+        if next_field == '#' || next_field == 'O' {
+            let original_target = next_field;
             let new_perspective = rotate(&perspective);
-            return Some((x, y, new_perspective));
+            return (Some((x, y, new_perspective)), Some(original_target));
         } else {
-            return Some((new_x, y, perspective));
+            return (Some((new_x, y, perspective)), None);
         }
     }
 
-    return None;
+    return (None, None);
 }
 
-fn go_left(map: &Map, location: &Location) -> Option<Location> {
+fn go_left(map: &Map, location: &Location) -> (Option<Location>, Option<char>) {
     let (x, y, perspective) = location.clone();
 
     if x > 0 {
@@ -133,30 +136,32 @@ fn go_left(map: &Map, location: &Location) -> Option<Location> {
 
         let next_field = map[y][new_x];
 
-        if next_field == '#' {
+        if next_field == '#' || next_field == 'O' {
+            let original_target = next_field;
             let new_perspective = rotate(&perspective);
-            return Some((x, y, new_perspective));
+            return (Some((x, y, new_perspective)), Some(original_target));
         } else {
-            return Some((new_x, y, perspective));
+            return (Some((new_x, y, perspective)), None);
         }
     }
 
-    return None;
+    return (None, None);
 }
 
-fn predict_next_step(map: &Map) -> Option<(Option<Location>, Option<Location>)> {
-    if let Ok(location) = find_guard(&map) {
+pub fn predict_next_step(map: &Map) -> Option<(Option<Location>, Option<Location>, Option<char>)> {
+    if let Some(location) = find_guard(&map) {
         let (_, _, perspective) = location.clone();
 
-        let next_location: Option<Location> = match &perspective {
+        let (next_location, original_target) = match &perspective {
             Perspective::Up => go_up(&map, &location),
             Perspective::Right => go_right(&map, &location),
             Perspective::Down => go_down(&map, &location),
             Perspective::Left => go_left(&map, &location),
         };
 
-        return Some((Some(location), next_location));
+        return Some((Some(location), next_location, original_target));
     }
+
     return None;
 }
 
@@ -164,11 +169,11 @@ fn mark_last_position(map: &mut Map, x: usize, y: usize) {
     map[y][x] = 'X';
 }
 
-fn update_position(map: &mut Map, x: usize, y: usize, new_perspective: Perspective) {
+pub fn update_position(map: &mut Map, x: usize, y: usize, new_perspective: Perspective) {
     map[y][x] = new_perspective.to_string().chars().next().unwrap()
 }
 
-fn show_map(map: &Map) -> String {
+pub fn show_map(map: &Map) -> String {
     let map = &map
         .iter()
         .map(|line| {
@@ -185,7 +190,7 @@ fn show_map(map: &Map) -> String {
 pub fn predict_path_positions(map: &mut str) -> (Map, String, usize) {
     let mut map: Map = parse_map(&map);
 
-    while let Some((before_location, after_location)) = predict_next_step(&map) {
+    while let Some((before_location, after_location, _)) = predict_next_step(&map) {
         // update_map(&mut map, &before_location, &after_location);
         if let Some(before_location) = before_location {
             let (x, y, _) = before_location;
@@ -212,8 +217,7 @@ pub fn predict_path_positions(map: &mut str) -> (Map, String, usize) {
 #[cfg(test)]
 mod tests {
     use super::{
-        find_guard, parse_map, perspective, predict_next_step, predict_path_positions, show_map,
-        Perspective,
+        find_guard, parse_map, perspective, predict_next_step, predict_path_positions, Perspective,
     };
 
     #[test]
@@ -222,14 +226,14 @@ mod tests {
             ".....#....
              .#..^.....",
         );
-        let (_, next_location) = predict_next_step(&map).unwrap();
+        let (_, next_location, _) = predict_next_step(&map).unwrap();
         assert_eq!(next_location, Some((4, 0, Perspective::Up)));
     }
 
     #[test]
     fn test_going_up_out_of_map() {
         let map = parse_map("...^#....."); // leaving map
-        let (_, next_location) = predict_next_step(&map).unwrap();
+        let (_, next_location, _) = predict_next_step(&map).unwrap();
         assert_eq!(next_location, None);
     }
 
@@ -239,7 +243,7 @@ mod tests {
             "....#.....
              .#..^.....",
         );
-        let (_, next_location) = predict_next_step(&map).unwrap();
+        let (_, next_location, _) = predict_next_step(&map).unwrap();
         assert_eq!(next_location, Some((4, 1, Perspective::Right)));
     }
 
@@ -249,7 +253,7 @@ mod tests {
             "....#.....
              .#..>.#...",
         );
-        let (_, next_location) = predict_next_step(&map).unwrap();
+        let (_, next_location, _) = predict_next_step(&map).unwrap();
         assert_eq!(next_location, Some((5, 1, Perspective::Right)));
     }
 
@@ -259,14 +263,14 @@ mod tests {
             "....#.....
              .#..>#....",
         );
-        let (_, next_location) = predict_next_step(&map).unwrap();
+        let (_, next_location, _) = predict_next_step(&map).unwrap();
         assert_eq!(next_location, Some((4, 1, Perspective::Down)));
     }
 
     #[test]
     fn test_going_right_out_of_map() {
         let map = parse_map(".#...#...>"); // leaving map
-        let (_, next_location) = predict_next_step(&map).unwrap();
+        let (_, next_location, _) = predict_next_step(&map).unwrap();
         assert_eq!(next_location, None);
     }
 
@@ -276,7 +280,7 @@ mod tests {
             "....#.v...
              .#...#....",
         );
-        let (_, next_location) = predict_next_step(&map).unwrap();
+        let (_, next_location, _) = predict_next_step(&map).unwrap();
         assert_eq!(next_location, Some((6, 1, Perspective::Down)));
     }
 
@@ -286,14 +290,14 @@ mod tests {
             "....#.v...
              .#....#...",
         );
-        let (_, next_location) = predict_next_step(&map).unwrap();
+        let (_, next_location, _) = predict_next_step(&map).unwrap();
         assert_eq!(next_location, Some((6, 0, Perspective::Left)));
     }
 
     #[test]
     fn test_going_down_leaving_the_map() {
         let map = parse_map("....#.v...");
-        let (_, next_location) = predict_next_step(&map).unwrap();
+        let (_, next_location, _) = predict_next_step(&map).unwrap();
         assert_eq!(next_location, None);
     }
 
@@ -303,7 +307,7 @@ mod tests {
             "....#.....
              .#.<.#....",
         );
-        let (_, next_location) = predict_next_step(&map).unwrap();
+        let (_, next_location, _) = predict_next_step(&map).unwrap();
         assert_eq!(next_location, Some((2, 1, Perspective::Left)));
     }
 
@@ -313,7 +317,7 @@ mod tests {
             "....#.....
              .#<..#....",
         );
-        let (_, next_location) = predict_next_step(&map).unwrap();
+        let (_, next_location, _) = predict_next_step(&map).unwrap();
         assert_eq!(next_location, Some((2, 1, Perspective::Up)));
     }
 
@@ -323,7 +327,7 @@ mod tests {
             "....#.....
              <....#....",
         );
-        let (_, next_location) = predict_next_step(&map).unwrap();
+        let (_, next_location, _) = predict_next_step(&map).unwrap();
         assert_eq!(next_location, None);
     }
 
@@ -343,7 +347,7 @@ mod tests {
         );
 
         let guard_position = find_guard(&map);
-        assert_eq!(guard_position, Ok((4, 6, Perspective::Up)))
+        assert_eq!(guard_position, Some((4, 6, Perspective::Up)))
     }
 
     #[test]
@@ -379,7 +383,7 @@ mod tests {
                              ......#..."
             .to_string();
 
-        let (map, map_after, steps) = predict_path_positions(&mut map);
+        let (_, map_after, steps) = predict_path_positions(&mut map);
 
         assert_eq!(
             map_after,
