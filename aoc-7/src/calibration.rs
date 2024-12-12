@@ -13,12 +13,14 @@ pub struct Equation {
 pub enum Operator {
     Add,
     Multiply,
+    Concatenate,
 }
 
 fn operator_by_index(i: i8) -> Operator {
     return match i {
         0 => Operator::Add,
         1 => Operator::Multiply,
+        2 => Operator::Concatenate,
         _ => panic!("unknown operator"),
     };
 }
@@ -61,6 +63,7 @@ fn compute_result_for_permutation(operands: &Vec<i64>, permutation: &Vec<i8>) ->
         result = match operator {
             Operator::Add => result + b,
             Operator::Multiply => result * b,
+            Operator::Concatenate => format!("{}{}", result, b).parse::<i64>().unwrap(),
         }
     }
 
@@ -92,7 +95,7 @@ fn try_configuration(
 
 pub fn calibrate(equations: Vec<Equation>) -> i64 {
     let mut result = 0;
-    let operators = [Operator::Add, Operator::Multiply].to_vec();
+    let operators = [Operator::Add, Operator::Multiply, Operator::Concatenate].to_vec();
 
     for equation in equations {
         if let Ok(intermediante_result) = try_configuration(&equation, &operators) {
