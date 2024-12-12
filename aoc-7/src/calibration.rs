@@ -1,5 +1,3 @@
-use core::panic;
-
 mod util;
 pub use util::parse;
 
