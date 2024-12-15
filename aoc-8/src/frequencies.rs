@@ -49,15 +49,23 @@ fn antenna_connections(
     return connections;
 }
 
-fn valid(map: &AntennaMap, (x, y): Location) -> Result<Location, String> {
+fn resonating(map: &AntennaMap, (x, y): Location, (dist_x, dist_y): Vector) -> Option<Location> {
     let width = map[0].len() as i64;
     let height = map.len() as i64;
 
-    if x >= 0 && x < width - 1 && y >= 0 && y < height - 1 && map[y as usize][x as usize] == '.' {
-        return Ok((x, y).clone());
+    let (x, y) = (x + dist_x, y + dist_y);
+
+    if x >= 0 && x < width && y >= 0 && y < height {
+        return Some((x, y));
     }
 
-    return Err("location is out of bounds or an antenna itself".to_string());
+    return None;
+}
+
+fn collect(antinodes: &mut Vec<Location>, location: &Location) {
+    if !antinodes.contains(location) {
+        antinodes.push(location.clone());
+    }
 }
 
 pub fn find_antinodes(map: AntennaMap) -> Result<u64, String> {
@@ -69,15 +77,24 @@ pub fn find_antinodes(map: AntennaMap) -> Result<u64, String> {
         let connections = antenna_connections(&antennas);
 
         for ((dist_x, dist_y), (x1, y1, _), (x2, y2, _)) in connections {
-            let antinode_1 = (x1 - dist_x, y1 - dist_y);
-            if let Ok(antinode_1) = valid(&map, antinode_1) {
-                antinodes.push(antinode_1);
-            };
+            let mut next_start: Location = (x1, y1);
+            collect(&mut antinodes, &(x1, y1));
+            collect(&mut antinodes, &(x2, y2));
 
-            let antinode_2 = (x2 + dist_x, y2 + dist_y);
-            if let Ok(antinode_2) = valid(&map, antinode_2) {
-                antinodes.push(antinode_2);
-            };
+            while let Some(next) = resonating(&map, next_start, (-1 * dist_x, -1 * dist_y)) {
+                next_start = next;
+                if map[next.1 as usize][next.0 as usize] == '.' {
+                    collect(&mut antinodes, &next);
+                }
+            }
+
+            let mut next_start: Location = (x2, y2);
+            while let Some(next) = resonating(&map, next_start, (dist_x, dist_y)) {
+                next_start = next;
+                if map[next.1 as usize][next.0 as usize] == '.' {
+                    collect(&mut antinodes, &next);
+                }
+            }
         }
     }
     draw_antinodes(&map, &antinodes);
@@ -171,6 +188,6 @@ mod tests {
 
         let result = find_antinodes(antenna_map);
 
-        assert_eq!(result, Ok(14));
+        assert_eq!(result, Ok(34));
     }
 }
