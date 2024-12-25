@@ -45,7 +45,7 @@ fn compact(disk_map: Vec<Option<u64>>) -> Vec<Option<u64>> {
     return compacted;
 }
 
-pub fn compact_and_update_checksum(disk_map: &str) -> u64 {
+pub fn compact_blockwise(disk_map: &str) -> u64 {
     let disk_map = parse_disk_map(disk_map);
     let disk_map = compact(disk_map);
 
@@ -68,7 +68,7 @@ pub fn compact_and_update_checksum(disk_map: &str) -> u64 {
 
 #[cfg(test)]
 mod tests {
-    use super::{compact, compact_and_update_checksum, parse_disk_map};
+    use super::{compact, compact_blockwise, parse_disk_map};
 
     fn render_number_options(numbers: Vec<Option<u64>>) -> String {
         return numbers
@@ -113,9 +113,9 @@ mod tests {
     }
 
     #[test]
-    fn test_compact_and_update_checksum() {
+    fn test_compact_blockwise() {
         let compact_format = "2333133121414131402";
-        let result = compact_and_update_checksum(compact_format);
+        let result = compact_blockwise(compact_format);
         assert_eq!(result, 1928);
     }
 }
