@@ -54,7 +54,7 @@ fn trail_head_targets(map: &TopographicMap, x: usize, y: usize) -> Vec<Position>
     return available_routes;
 }
 
-pub fn trail_head_scoring(map: &TopographicMap) -> u32 {
+pub fn trail_head_scoring(map: &TopographicMap) -> u16 {
     let mut paths_count = 0;
 
     for y in 0..map.len() {
@@ -68,7 +68,7 @@ pub fn trail_head_scoring(map: &TopographicMap) -> u32 {
             trail_head_targets.sort();
             trail_head_targets.dedup();
 
-            let trail_head_score = trail_head_targets.len() as u32;
+            let trail_head_score = trail_head_targets.len() as u16;
             paths_count += trail_head_score;
         }
     }
@@ -76,7 +76,7 @@ pub fn trail_head_scoring(map: &TopographicMap) -> u32 {
     return paths_count;
 }
 
-pub fn trail_head_rating(map: &TopographicMap) -> u32 {
+pub fn trail_head_rating(map: &TopographicMap) -> u16 {
     let mut paths_count = 0;
 
     for y in 0..map.len() {
@@ -86,7 +86,7 @@ pub fn trail_head_rating(map: &TopographicMap) -> u32 {
             }
 
             let trail_head_targets = trail_head_targets(map, x, y);
-            let trail_head_score = trail_head_targets.len() as u32;
+            let trail_head_score = trail_head_targets.len() as u16;
             paths_count += trail_head_score;
         }
     }
