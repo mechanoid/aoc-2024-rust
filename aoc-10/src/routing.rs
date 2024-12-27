@@ -51,9 +51,6 @@ fn trail_head_targets(map: &TopographicMap, x: usize, y: usize) -> Vec<Position>
         available_routes = [available_routes, trail_head_targets(map, x, y + 1)].concat();
     }
 
-    available_routes.sort();
-    available_routes.dedup();
-
     return available_routes;
 }
 
@@ -66,7 +63,30 @@ pub fn trail_head_scoring(map: &TopographicMap) -> u32 {
                 continue;
             }
 
-            let trail_head_score = trail_head_targets(map, x, y).len() as u32;
+            let mut trail_head_targets = trail_head_targets(map, x, y);
+
+            trail_head_targets.sort();
+            trail_head_targets.dedup();
+
+            let trail_head_score = trail_head_targets.len() as u32;
+            paths_count += trail_head_score;
+        }
+    }
+
+    return paths_count;
+}
+
+pub fn trail_head_rating(map: &TopographicMap) -> u32 {
+    let mut paths_count = 0;
+
+    for y in 0..map.len() {
+        for x in 0..map[y].len() {
+            if map[y][x] != 0 {
+                continue;
+            }
+
+            let trail_head_targets = trail_head_targets(map, x, y);
+            let trail_head_score = trail_head_targets.len() as u32;
             paths_count += trail_head_score;
         }
     }
@@ -82,7 +102,7 @@ pub fn trail_head_scoring(map: &TopographicMap) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use super::{parse, trail_head_scoring, trail_head_targets, walkable};
+    use super::{parse, trail_head_rating, trail_head_scoring, trail_head_targets, walkable};
 
     #[test]
     fn test_walkable() {
@@ -119,7 +139,7 @@ mod tests {
         );
 
         let result = trail_head_targets(&map, 3, 0);
-        assert_eq!(result.len(), 4);
+        assert_eq!(result.len(), 13);
     }
 
     #[test]
@@ -149,5 +169,44 @@ mod tests {
         );
         let result = trail_head_scoring(&map);
         assert_eq!(result, 36);
+    }
+
+    #[test]
+    fn test_trail_head_rating() {
+        let map = parse(
+            "..90..9
+                  ...1.98
+                  ...2..7
+                  6543456
+                  765.987
+                  876....
+                  987....",
+        );
+        let result = trail_head_rating(&map);
+        assert_eq!(result, 13);
+
+        let map = parse(
+            "012345
+123456
+234567
+345678
+4.6789
+56789.",
+        );
+        let result = trail_head_rating(&map);
+        assert_eq!(result, 227);
+
+        let map = parse(
+            "89010123
+78121874
+87430965
+96549874
+45678903
+32019012
+01329801
+10456732.",
+        );
+        let result = trail_head_rating(&map);
+        assert_eq!(result, 81);
     }
 }
