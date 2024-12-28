@@ -1,3 +1,4 @@
+use memoize::memoize;
 use std::time::Instant;
 
 type Stone = u64;
@@ -10,17 +11,19 @@ pub fn parse(blink_stones: &str) -> Vec<Stone> {
         .collect::<Vec<Stone>>()
 }
 
-fn warp(blink_stones: &mut Vec<Stone>, stone: Stone) {
+#[memoize(Capacity: 100000)]
+fn warp(stone: Stone) -> (Stone, Option<Stone>) {
     match stone {
-        0 => blink_stones.push(1),
+        0 => (1, None),
         i if i.to_string().len() % 2 == 0 => {
             let i = i.to_string();
             let (a, b) = i.split_at(i.len() / 2);
-
-            blink_stones.push(a.parse::<Stone>().unwrap());
-            blink_stones.push(b.parse::<Stone>().unwrap());
+            (
+                a.parse::<Stone>().unwrap(),
+                Some(b.parse::<Stone>().unwrap()),
+            )
         }
-        _ => blink_stones.push(stone * 2024),
+        _ => (stone * 2024, None),
     }
 }
 
@@ -28,7 +31,11 @@ fn blink(blink_stones: Vec<Stone>) -> Vec<Stone> {
     let mut blinked = vec![];
 
     for stone in blink_stones {
-        warp(&mut blinked, stone);
+        let (update, new) = warp(stone);
+        blinked.push(update);
+        if let Some(new) = new {
+            blinked.push(new);
+        }
     }
 
     return blinked;
@@ -43,10 +50,10 @@ pub fn blink_n_times(blink_stones: &Vec<Stone>, n: u8) -> Vec<Stone> {
         blinked = blink(blinked);
         let elapsed_time = now.elapsed();
         println!(
-            "Blinked for {} times: we have {} stones now! ({}s)",
+            "Blinked for {} times: we have {} stones now! ({}ms)",
             i + 1,
             blinked.len(),
-            elapsed_time.as_secs()
+            elapsed_time.as_millis()
         );
     }
 
