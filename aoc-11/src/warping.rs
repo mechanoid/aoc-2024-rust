@@ -1,7 +1,8 @@
 use memoize::memoize;
 use std::time::Instant;
+use tokio::task::JoinSet;
 
-type Stone = u64;
+pub type Stone = u32;
 
 pub fn parse(blink_stones: &str) -> Vec<Stone> {
     blink_stones
@@ -11,7 +12,7 @@ pub fn parse(blink_stones: &str) -> Vec<Stone> {
         .collect::<Vec<Stone>>()
 }
 
-#[memoize(Capacity: 100000)]
+#[memoize]
 fn warp(stone: Stone) -> (Stone, Option<Stone>) {
     match stone {
         0 => (1, None),
@@ -27,7 +28,7 @@ fn warp(stone: Stone) -> (Stone, Option<Stone>) {
     }
 }
 
-fn blink(blink_stones: Vec<Stone>) -> Vec<Stone> {
+async fn blink(blink_stones: Vec<Stone>) -> Vec<Stone> {
     let mut blinked = vec![];
 
     for stone in blink_stones {
@@ -41,13 +42,27 @@ fn blink(blink_stones: Vec<Stone>) -> Vec<Stone> {
     return blinked;
 }
 
-pub fn blink_n_times(blink_stones: &Vec<Stone>, n: u8) -> Vec<Stone> {
+async fn blink_chunked(blink_stones: Vec<Stone>) -> Vec<Stone> {
+    let mut set = JoinSet::new();
+
+    for chunk in blink_stones.chunks(10000) {
+        set.spawn(blink(chunk.to_vec()));
+    }
+
+    let result = set.join_all().await;
+    return result
+        .iter()
+        .flat_map(|el| el.clone())
+        .collect::<Vec<Stone>>();
+}
+
+pub async fn blink_n_times(blink_stones: &Vec<Stone>, n: u8) -> Vec<Stone> {
     println!("\n\nstarting to blink!\n");
     let mut blinked = blink_stones.clone();
 
     for i in 0..n {
         let now = Instant::now();
-        blinked = blink(blinked);
+        blinked = blink_chunked(blinked).await;
         let elapsed_time = now.elapsed();
         println!(
             "Blinked for {} times: we have {} stones now! ({}ms)",
@@ -69,38 +84,38 @@ pub fn blink_n_times(blink_stones: &Vec<Stone>, n: u8) -> Vec<Stone> {
 
 #[cfg(test)]
 mod tests {
-    use super::{blink, blink_n_times};
+    use super::{blink, blink_n_times, Stone};
 
-    #[test]
-    fn test_blink() {
-        let stones: Vec<u64> = vec![0, 1, 10, 99, 999];
-        let result = blink(stones);
+    #[tokio::test]
+    async fn test_blink() {
+        let stones: Vec<Stone> = vec![0, 1, 10, 99, 999];
+        let result = blink(stones).await;
         assert_eq!(result, vec![1, 2024, 1, 0, 9, 9, 2021976]);
     }
 
-    #[test]
-    fn test_blink_n_times() {
-        let stones: Vec<u64> = vec![125, 17];
+    #[tokio::test]
+    async fn test_blink_n_times() {
+        let stones: Vec<Stone> = vec![125, 17];
 
-        let result = blink_n_times(&stones, 1);
+        let result = blink_n_times(&stones, 1).await;
         assert_eq!(result, vec![253000, 1, 7]);
 
-        let result = blink_n_times(&stones, 2);
+        let result = blink_n_times(&stones, 2).await;
         assert_eq!(result, vec![253, 0, 2024, 14168]);
 
-        let result = blink_n_times(&stones, 3);
+        let result = blink_n_times(&stones, 3).await;
         assert_eq!(result, vec![512072, 1, 20, 24, 28676032]);
 
-        let result = blink_n_times(&stones, 4);
+        let result = blink_n_times(&stones, 4).await;
         assert_eq!(result, vec![512, 72, 2024, 2, 0, 2, 4, 2867, 6032]);
 
-        let result = blink_n_times(&stones, 5);
+        let result = blink_n_times(&stones, 5).await;
         assert_eq!(
             result,
             vec![1036288, 7, 2, 20, 24, 4048, 1, 4048, 8096, 28, 67, 60, 32]
         );
 
-        let result = blink_n_times(&stones, 6);
+        let result = blink_n_times(&stones, 6).await;
         assert_eq!(
             result,
             vec![
