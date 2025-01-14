@@ -51,12 +51,17 @@ impl ClawMachine {
 
         // number of times the a button has to be clicked
         let x = (py * bx - px * by) / (ay * bx - ax * by);
+
         // number of times the b button has to be clicked
         let y1 = (px - ax * x) / bx;
         let y2 = (py - ay * x) / by;
 
         if y1 == y2 {
-            return Some(3 * x + y1);
+            let matched_px = ax * x + bx * y1 - px == 0;
+            let matched_py = ay * x + by * y1 - py == 0;
+            if matched_px && matched_py {
+                return Some(3 * x + y1);
+            }
         }
 
         return None;
