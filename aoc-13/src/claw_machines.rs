@@ -59,6 +59,7 @@ impl ClawMachine {
         if y1 == y2 {
             let matched_px = ax * x + bx * y1 - px == 0;
             let matched_py = ay * x + by * y1 - py == 0;
+
             if matched_px && matched_py {
                 return Some(3 * x + y1);
             }
@@ -103,9 +104,9 @@ fn parse_claw_machine(
     if let [a_button_line, b_button_line, prize_line] = *lines.as_slice() {
         let a_button = parse_line(a_button_line, button_template).unwrap();
         let b_button = parse_line(b_button_line, button_template).unwrap();
-        let prize = parse_line(prize_line, prize_template).unwrap();
-        // prize.x += 10000000000000;
-        // prize.y += 10000000000000;
+        let mut prize = parse_line(prize_line, prize_template).unwrap();
+        prize.x += 10000000000000;
+        prize.y += 10000000000000;
 
         return Ok(ClawMachine {
             a_button,
